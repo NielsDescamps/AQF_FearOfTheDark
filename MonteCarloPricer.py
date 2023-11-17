@@ -1,10 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy.optimize import minimize
-from Heston_FFT import Heston_FFT
-from sse import sse
-from load_data import load_data
-from get_maturities import get_maturities
+from src.Heston_FFT import Heston_FFT
+from src.sse import sse
+from src.load_data import load_data
+from src.get_maturities import get_maturities
 
 
 # Import options data from Yahoo Finance
@@ -84,7 +84,7 @@ for i in range(m):
 plt.xlabel('Timestep')
 plt.ylabel('St')
 plt.title('Price paths')
-plt.savefig('../generated_plots/Price_paths_MC_1205.png')
+plt.savefig('/generated_plots/Price_paths_MC_1205.png')
 plt.show()
 
 # 5. Check: compare prices of European options

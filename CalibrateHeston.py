@@ -4,7 +4,7 @@ from scipy.optimize import minimize
 import get_expiry_dates
 import get_maturities
 import load_data
-import Heston_FFT
+from src.Heston_FFT import Heston_FFT
 import APE
 
 # Import options data from Yahoo Finance
