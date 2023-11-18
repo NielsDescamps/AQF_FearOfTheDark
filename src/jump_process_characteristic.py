@@ -13,34 +13,46 @@ def dF_i(z,gamma_i):
     else:
         return gamma_i*np.exp(gamma_i*z)
 
-def xi_i(gamma_i):
-    return integrate.quad(lambda y: (np.exp(y)-1)*dF_i(y, gamma_i), -np.inf, 0)
-def jump_process_characteristic(a, lamb, delta, gamma):
+def exp_ODE(a, b, alpha, xi, delta, lamb, gamma):
+    m = len(xi)
+    db_dt = alpha*b[:m] + xi * b[m:] - gamma/(np.matmul(delta.T, b[:m]) + b[m:] + gamma)+1
+    db_dt = np.concatenate((db_dt, np.zeros(m)), axis=0)
+    da_dt = -np.dot(alpha * lamb, b[:m])
+    return db_dt, da_dt
+
+# Xi for exponential distribution
+def exp_xi_i(gamma_i):
+    return gamma_i/(gamma_i+1)-1
+def jump_process_characteristic(alpha, lamb, delta, gamma):
 
     #Number of indices
-    N = 4
-    xi = np.ones(N)
-    zero = np.zeros(N)
-    Zero = np.zeros((N,N))
-    K_0 = np.concatenate((np.multiply(a,lamb),zero))
-    K_1 = np.concatenate((np.concatenate((np.diag(-a), Zero), axis=1), np.concatenate((np.diag(-xi),Zero), axis=1)))
+    M = 2
+    xi = np.ones(M)
+    zero = np.zeros(M)
+    Zero = np.zeros((M,M))
+    #K_0 = np.concatenate((np.multiply(alpha, lamb), zero))
+    #K_1 = np.concatenate((np.concatenate((np.diag(-alpha), Zero), axis=1), np.concatenate((np.diag(-xi), Zero), axis=1)))
     Lambda_0 = 0
     Lambda_1 = []
     zeta = []
-    for i in range(N):
+    for i in range(M):
         # Lambda_1_i
-        e = np.zeros(N)
+        e = np.zeros(M)
         e[i] = 1
         Lambda_1.append(np.concatenate((e,zero)))
 
         # Zeta_i
         zeta.append(np.diag(np.concatenate((delta[:,i], e))))
+    a = 1
+
+    b = [4,3,2,1]
+    da, db = exp_ODE(a, b, alpha, xi, delta, lamb, gamma)
 
     return 0
 
 
-delta = np.array([[1,2,3,4], [5,6,7,8], [9,10,11,12], [13,14,15,16]])
-jump_process_characteristic(np.ones(4), np.ones(4), delta, np.ones(4))
+delta = np.array([[1,2],[3 , 4]])
+jump_process_characteristic(np.ones(2), np.ones(2), delta, np.ones(2))
 
 
 
