@@ -23,7 +23,7 @@ def ode_system_Gaussian(t,y,params):
     b=y[:2*m]
     a=y[2*m]
 
-    dydt = np.zeros(2*m+1)
+    dydt = np.zeros(2*m+1,dtype=np.complex128)
     
     ## 1. db/dt for 1..m
     for j in range(m):
@@ -102,7 +102,7 @@ def runge_kutta_4th_order_finalbc(ode_func, final_boundary_condition, t_span, h,
     t_values = np.arange(t_start, t_end + h, h)
     num_steps = len(t_values)
 
-    y_values = np.zeros((num_steps, len(final_boundary_condition)))
+    y_values = np.zeros((num_steps, len(final_boundary_condition)), dtype=np.complex128)
 
     # Set the final boundary condition
     y_values[-1] = final_boundary_condition
