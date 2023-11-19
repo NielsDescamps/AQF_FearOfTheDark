@@ -26,9 +26,11 @@ def hestonCalibration(data, conf):
         json.dump({'kappa': kappa, 'eta': eta, 'theta': theta, 'rho': rho, 'v0':v0}, outfile)
     #TODO save the parameters to a json file as ex, (then no need to always recalibrate)
     return {'kappa': kappa, 'eta': eta, 'theta': theta, 'rho': rho, 'v0':v0}
+
 def jumpProcessCalibration(params):
     #Calib procedure
     return 0
+
 def initialize_calib():
     # Import config_file stating: Data to use, input parameters
     file = "./models_config_calibration/heston_config.json"

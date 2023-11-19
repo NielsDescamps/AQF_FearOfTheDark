@@ -17,11 +17,12 @@ def Heston_FFT(kappa, eta, theta, rho, sigma0, K, T, S0, r, q, type, integration
 
     # define grid of log-strikesAPE has size 4095
     #k = np.arange(-b, b - lambda_val, lambda_val)
+
     k = np.arange(-b, b, lambda_val)
     # compute rho
     v = np.arange(0, N * eta_grid, eta_grid)
     u = v - (alpha + 1) * 1j
-    rho_val = np.exp(-r * T) * heston_characteristic(r, q, kappa, eta, theta, rho, sigma0, S0, u, T) / (
+    rho_val = np.exp(-r * T) * heston_characteristic(kappa, eta, theta, rho, sigma0, r, q, S0, T, u) / (
                 alpha ** 2 + alpha - v ** 2 + 1j * (2 * alpha + 1) * v)
 
     if integration_rule == 0:
