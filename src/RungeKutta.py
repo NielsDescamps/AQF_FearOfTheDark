@@ -1,16 +1,6 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def ode_system(t, y,params):
-    """
-    Define your system of ODEs here.
-    This function should return a numpy array representing the derivatives of y with respect to t.
-    """
-    # Example: dy/dt = [y[1], -y[0]]
-    dydt = np.array([y[1], -y[0]])
-    return dydt
-
-#ODE system for Gaussian jumps
 def ode_system_Gaussian(t,y,params):
     """
     Ths function defines the system of ODEs that need solving for Gaussian jump size
@@ -59,7 +49,6 @@ def ode_system_Gaussian(t,y,params):
     return dydt
 
 
-def runge_kutta_4th_order_initbc(ode_func, initial_conditions, t_span, h):
     """
     Implement the RK4 method to solve a system of ODEs given a set of initial conditions.
 
@@ -93,7 +82,6 @@ def runge_kutta_4th_order_initbc(ode_func, initial_conditions, t_span, h):
 
     return t_values, y_values
 
-
 def runge_kutta_4th_order_finalbc(ode_func, final_boundary_condition, t_span, h, params):
     """
     Implement the RK4 method to solve a system of ODEs given a set of final conditions
@@ -107,6 +95,8 @@ def runge_kutta_4th_order_finalbc(ode_func, final_boundary_condition, t_span, h,
     Returns:
     - t_values: Array of time values.
     - y_values: Array of variable values corresponding to each time point.
+        - row 1..(2m-1) contains b(t)
+        - row 2m contains a(t) 
     """
     t_start, t_end = t_span
     t_values = np.arange(t_start, t_end + h, h)
@@ -140,7 +130,7 @@ def runge_kutta_4th_order_finalbc(ode_func, final_boundary_condition, t_span, h,
 # m = len(alpha)
 
 # v=np.array([1,1,1,1])
-# final_boundary_conditions = np.array([1,-1,2,2,0])
+# final_boundary_conditions = np.array([1,-1,2,2.5,0])
 
 # t_span = (0,10)
 # h=1

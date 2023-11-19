@@ -1,6 +1,6 @@
 import numpy as np
 
-def heston_characteristic(r, q, kappa, eta, theta, rho, sigma0, S0, u, t):
+def heston_characteristic(kappa, eta, theta, rho, sigma0, r, q, S0, t, u):
     d = np.sqrt((rho*theta*u*1j-kappa)**2-theta**2*(-1j*u-u**2))
     g = (kappa-rho*theta*u*1j-d)/(kappa-rho*theta*u*1j+d)
     p1 = 1j*u*(np.log(S0)+(r-q)*t)
