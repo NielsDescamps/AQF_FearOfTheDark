@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def ode_system(t, y):
+def ode_system(t, y,params):
     """
     Define your system of ODEs here.
     This function should return a numpy array representing the derivatives of y with respect to t.
@@ -10,19 +10,53 @@ def ode_system(t, y):
     dydt = np.array([y[1], -y[0]])
     return dydt
 
-#ODe system for Gaussian jumps
-def ode_system_Gausian(t,a,b,params):
+#ODE system for Gaussian jumps
+def ode_system_Gaussian(t,y,params):
     """
     Ths function defines the system of ODEs that need solving for Gaussian jump size
-    The vector y consists of (for m=2):
-    - b1, b2, b3, b4
-    - a
+    Input params: 
+    - alpha = vector of size m with alpha values
+    - beta = vector of size m with beta values
+    - sigma = vector of size m with beta values
+    - delta = matrix of size mXm
+
+    The input vector y consists of  :
+    - b1, b2, b3, b4 (2*m)
+    - a (1)
+    ==> in total y will have dimension of (2*m + 1)
+
     This function should return a numpy array representing the derivatives of y with respect to t.
     """
+    [alpha,delta,beta,sigma,lambda_bar] = params
+
+    m = len(alpha)
+    b=y[:2*m]
+    a=y[2*m]
+
+    dydt = np.zeros(2*m+1)
     
+    ## 1. db/dt for 1..m
+    for j in range(m):
+        # calculate exponent
+        exponent_j = b[m+j]*beta[j] + 1/2*(b[j+m])**2 * sigma[j]**2 + 1
+        for i in range(m):
+            exponent_j += delta[i,j]*b[i]
+         
+        #calculate xi
+        xi_j = np.exp(beta[j]+1/2*sigma[j]**2)
+
+        #calculate dydt
+        dydt[j] = alpha[j]*b[j] + xi_j*b[j+m] - np.exp(exponent_j)
+
+
+    ## 2. db/dt for m+1..2*m
+    for j in range(m, 2*m):
+        dydt[j] = 0 
+
+    ## 3. da/dt
+    dydt[2*m] = -np.sum(alpha * lambda_bar * b[:m])
 
     return dydt
-
 
 
 def runge_kutta_4th_order_initbc(ode_func, initial_conditions, t_span, h):
@@ -60,7 +94,7 @@ def runge_kutta_4th_order_initbc(ode_func, initial_conditions, t_span, h):
     return t_values, y_values
 
 
-def runge_kutta_4th_order_finalbc(ode_func, final_boundary_condition, t_span, h):
+def runge_kutta_4th_order_finalbc(ode_func, final_boundary_condition, t_span, h, params):
     """
     Implement the RK4 method to solve a system of ODEs given a set of final conditions
 
@@ -87,26 +121,54 @@ def runge_kutta_4th_order_finalbc(ode_func, final_boundary_condition, t_span, h)
         t = t_values[i]
         y = y_values[i]
 
-        k1 = h * ode_func(t, y)
-        k2 = h * ode_func(t - 0.5 * h, y - 0.5 * k1)
-        k3 = h * ode_func(t - 0.5 * h, y - 0.5 * k2)
-        k4 = h * ode_func(t - h, y - k3)
+        k1 = h * ode_func(t, y, params)
+        k2 = h * ode_func(t - 0.5 * h, y - 0.5 * k1, params)
+        k3 = h * ode_func(t - 0.5 * h, y - 0.5 * k2, params)
+        k4 = h * ode_func(t - h, y - k3, params)
 
         y_values[i - 1] = y - (k1 + 2 * k2 + 2 * k3 + k4) / 6
 
     return t_values, y_values
 
-# Example usage:
-final_boundary_conditions = np.array([1.0, 0.0])  # Example initial conditions
-t_span = (0, 10)  # Example time span
-h = 0.01  # Example step size
+# #Example usage of ode_systemGaussian 
+# alpha = np.array([0.1, 0.2]) 
+# beta = np.array([0.5 , 0.6]) 
+# sigma = np.array([0 , 0]) 
+# delta = np.array([[0, -0.1], [-0.1, 0]]) 
+# lambda_bar = np.array([0.001, 0.001]) 
+# params = [alpha,delta,beta,sigma,lambda_bar] 
+# m = len(alpha)
 
-t_values, y_values = runge_kutta_4th_order_finalbc(ode_system, final_boundary_conditions, t_span, h)
+# v=np.array([1,1,1,1])
+# final_boundary_conditions = np.array([1,-1,2,2,0])
 
-# Plot the results
-plt.plot(t_values, y_values[:, 0], label='y[0]')
-plt.plot(t_values, y_values[:, 1], label='y[1]')
-plt.xlabel('Time')
-plt.ylabel('Variable Values')
-plt.legend()
-plt.show()
+# t_span = (0,10)
+# h=1
+
+# t_values, y_values = runge_kutta_4th_order_finalbc(ode_system_Gaussian, final_boundary_conditions, t_span, h,params)
+
+# for i in range(len(y_values[1])):
+#     plt.plot(t_values, y_values[:, i], label=f'y[{i}]')
+# plt.xlabel('Time')
+# plt.ylabel('Variable Values')
+# plt.legend()
+# plt.show()
+
+
+# # Example usage of ode_system
+# final_boundary_conditions = np.array([1.0, 0.0])  # Example initial conditions
+# t_span = (0, 10)  # Example time span
+# h = 0.01  # Example step size
+
+# t_values, y_values = runge_kutta_4th_order_finalbc(ode_system, final_boundary_conditions, t_span, h,False)
+
+# print(t_values)
+# print(y_values[:,1])
+
+# # Plot the results
+# for i in range(len(y_values[1])):
+#     plt.plot(t_values, y_values[:, i], label=f'y[i]')
+# plt.xlabel('Time')
+# plt.ylabel('Variable Values')
+# plt.legend()
+# plt.show()
