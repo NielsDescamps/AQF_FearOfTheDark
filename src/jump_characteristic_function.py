@@ -116,34 +116,36 @@ def calc_priceFFT(characteristic_function, model_params, K, T, r, q, S0, type, i
     return out
 
 def calc_priceNonFFT(characteristic_function,model_params, K,T,r,q,S0,type):
-
+    """
+    Should contain an implementation of formula (34) pricing formula
+    """
     return True
 
-# Example parameters
-alpha = np.array([0.1, 0.2])
-delta = np.zeros((2, 2))
-beta = np.array([0.3, 0.4])
-sigma = np.array([0.5, 0.6])
-lambda_bar = np.array([0., 0.8])
+# # Example parameters
+# alpha = np.array([0.1, 0.2])
+# delta = np.zeros((2, 2))
+# beta = np.array([0.3, 0.4])
+# sigma = np.array([0.5, 0.6])
+# lambda_bar = np.array([0., 0.8])
 
-params = [alpha, delta, beta, sigma, lambda_bar]
-lambda_zero = np.array([0.1, 0.3])
-t_values = np.linspace(0, 1, 100)  # Adjust the time range as needed
-T = 1
-t=0
-h = 0.1
-u_values = np.linspace(-10,10,200)
-# u_values = [1.5]
-index = 0  # Assuming you want to assess asset with index 0 (first asset)
+# params = [alpha, delta, beta, sigma, lambda_bar]
+# lambda_zero = np.array([0.1, 0.3])
+# t_values = np.linspace(0, 1, 100)  # Adjust the time range as needed
+# T = 1
+# t=0
+# h = 0.1
+# u_values = np.linspace(-10,10,200)
+# # u_values = [1.5]
+# index = 0  # Assuming you want to assess asset with index 0 (first asset)
 
-# Example usage of mutualjump_characteristic_function
-PHI_values = [mutualjump_characteristic_function(params, lambda_zero, t, T, h, u, index) for u in u_values]
+# # Example usage of mutualjump_characteristic_function
+# PHI_values = [mutualjump_characteristic_function(params, lambda_zero, t, T, h, u, index) for u in u_values]
 
-# Plotting
-plt.plot(u_values, np.real(PHI_values), label='Real part of PHI')
-plt.plot(u_values, np.imag(PHI_values), label='Imaginary part of PHI')
-plt.xlabel('Time')
-plt.ylabel('PHI values')
-plt.legend()
-plt.title('PHI values for different u')
-plt.show()
+# # Plotting
+# plt.plot(u_values, np.real(PHI_values), label='Real part of PHI')
+# plt.plot(u_values, np.imag(PHI_values), label='Imaginary part of PHI')
+# plt.xlabel('Time')
+# plt.ylabel('PHI values')
+# plt.legend()
+# plt.title('PHI values for different u')
+# plt.show()

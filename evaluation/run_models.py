@@ -37,6 +37,7 @@ def plot_prices(option_data, heston_prices):
     plt.title('Comparison FFT - Midquote')
     plt.legend(['FFT', 'Market'])
     plt.show()
+
 def run_models():
     heston_params, heston_config, jump_process_params, jump_process_config, option_data = import_model_data()
 
