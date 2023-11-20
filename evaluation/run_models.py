@@ -4,6 +4,7 @@ from src.load_data import load_data
 from src.get_maturities import get_maturities
 import numpy as np
 import matplotlib.pyplot as plt
+from jump_characteristic_function import mutualjump_characteristic_function
 
 def import_model_data():
     #Import calibrated parameters
@@ -12,6 +13,8 @@ def import_model_data():
 
     jump_process_file = "./models_config_calibration/jump_process_calib.json"
     jump_process_params = json.load(open(jump_process_file))
+
+
 
     # Import calibration data
     heston_conf_file = "./models_config_calibration/heston_config.json"
@@ -55,7 +58,44 @@ def run_models():
                                    heston_config['q'],
                                    heston_config['option_type'],
                                    heston_config['integration_rule']) for strike in strikes]
-    plot_prices(option_data, Heston_FFT_price)
+    #plot_prices(option_data, Heston_FFT_price)
+
+    # # Example parameters
+    jump_distribution = "Exponential"
+
+    if jump_distribution == "Exponential":
+        params = [np.array(jump_process_params['alpha']),
+                   np.array(jump_process_params['delta']),
+                   np.array(jump_process_params['gamma']),
+                   np.array(jump_process_params['lambda_bar'])
+                   ]
+    elif jump_distribution == "Gaussian":
+        params = [np.array(jump_process_params['alpha']),
+                  np.array(jump_process_params['delta']),
+                  np.array(jump_process_params['beta']),
+                  np.array(jump_process_params['sigma']),
+                  np.array(jump_process_params['lambda_bar'])
+                  ]
+    lambda_zero = np.array([0.1, 0.3])
+    t_values = np.linspace(0, 1, 100)  # Adjust the time range as needed
+    T = 1
+    t = 0
+    h = 0.1
+    u_values = np.linspace(-10, 10, 200)
+    # # u_values = [1.5]
+    index = 0  # Assuming you want to assess asset with index 0 (first asset)
+
+    # # Example usage of mutualjump_characteristic_function
+    PHI_values = [mutualjump_characteristic_function(params, lambda_zero, t, T, h, u, index, jump_distribution) for u in u_values]
+
+    # # Plotting
+    plt.plot(u_values, np.real(PHI_values), label='Real part of PHI')
+    plt.plot(u_values, np.imag(PHI_values), label='Imaginary part of PHI')
+    plt.xlabel('Time')
+    plt.ylabel('PHI values')
+    plt.legend()
+    plt.title('PHI values for different u')
+    plt.show()
 
 run_models()
 

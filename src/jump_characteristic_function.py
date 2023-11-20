@@ -1,10 +1,11 @@
 from RungeKutta import ode_system_Gaussian
+from RungeKutta import ode_system_Exponential
 from RungeKutta import runge_kutta_4th_order_finalbc
 import numpy as np
 from scipy.interpolate import CubicSpline
 import matplotlib.pyplot as plt
 
-def mutualjump_characteristic_function(params,lambda_zero, t, T, h, u, index):
+def mutualjump_characteristic_function(params,lambda_zero, t, T, h, u, index, jump_distribution):
     """
     Returns values for the characteristic function of the m-dimensional Hawkes process
     Parameters:
@@ -19,7 +20,7 @@ def mutualjump_characteristic_function(params,lambda_zero, t, T, h, u, index):
     - value of the characteristic function phi2_index(u,t,T)
     """
 
-    [alpha,delta,beta,sigma,lambda_bar] = params
+    alpha = params[0]
     m = len(alpha)
 
     # 1. Construct Yt
@@ -43,7 +44,12 @@ def mutualjump_characteristic_function(params,lambda_zero, t, T, h, u, index):
     
     t_span = (t,T)
 
-    [t_values, y_values] = runge_kutta_4th_order_finalbc(ode_system_Gaussian,final_conditions, t_span, h, params)
+    if jump_distribution == "Exponential":
+        ode_system = ode_system_Exponential
+    elif jump_distribution == "Gaussian":
+        ode_system = ode_system_Gaussian
+
+    [t_values, y_values] = runge_kutta_4th_order_finalbc(ode_system,final_conditions, t_span, h, params)
     at = y_values[:,2*m]
     bt = y_values[:,:2*m]
 
@@ -121,31 +127,3 @@ def calc_priceNonFFT(characteristic_function,model_params, K,T,r,q,S0,type):
     """
     return True
 
-# # Example parameters
-# alpha = np.array([0.1, 0.2])
-# delta = np.zeros((2, 2))
-# beta = np.array([0.3, 0.4])
-# sigma = np.array([0.5, 0.6])
-# lambda_bar = np.array([0., 0.8])
-
-# params = [alpha, delta, beta, sigma, lambda_bar]
-# lambda_zero = np.array([0.1, 0.3])
-# t_values = np.linspace(0, 1, 100)  # Adjust the time range as needed
-# T = 1
-# t=0
-# h = 0.1
-# u_values = np.linspace(-10,10,200)
-# # u_values = [1.5]
-# index = 0  # Assuming you want to assess asset with index 0 (first asset)
-
-# # Example usage of mutualjump_characteristic_function
-# PHI_values = [mutualjump_characteristic_function(params, lambda_zero, t, T, h, u, index) for u in u_values]
-
-# # Plotting
-# plt.plot(u_values, np.real(PHI_values), label='Real part of PHI')
-# plt.plot(u_values, np.imag(PHI_values), label='Imaginary part of PHI')
-# plt.xlabel('Time')
-# plt.ylabel('PHI values')
-# plt.legend()
-# plt.title('PHI values for different u')
-# plt.show()
