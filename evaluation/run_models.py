@@ -61,7 +61,7 @@ def run_models():
     #plot_prices(option_data, Heston_FFT_price)
 
     # # Example parameters
-    jump_distribution = "Exponential"
+    jump_distribution = "Gaussian"
 
     if jump_distribution == "Exponential":
         params = [np.array(jump_process_params['alpha']),
