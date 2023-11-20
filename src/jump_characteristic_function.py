@@ -50,9 +50,11 @@ def mutualjump_characteristic_function(params,lambda_zero, t, T, h, u, index):
     a= at[0]
     print("at: ",at)
 
-    b= bt[:,0]
+    b= bt[0,:]
     print("bt: ",bt)
+    print('b0: ',b)
 
+    print('Yt = ',Yt)
     PHI = np.exp(a + np.dot(Yt,b)) 
     
     return PHI
@@ -130,8 +132,8 @@ t_values = np.linspace(0, 1, 100)  # Adjust the time range as needed
 T = 1
 t=0
 h = 0.1
-# u_values = np.linspace(-10,10,20)
-u_values = [1.5]
+u_values = np.linspace(-10,10,200)
+# u_values = [1.5]
 index = 0  # Assuming you want to assess asset with index 0 (first asset)
 
 # Example usage of mutualjump_characteristic_function
@@ -143,5 +145,5 @@ plt.plot(u_values, np.imag(PHI_values), label='Imaginary part of PHI')
 plt.xlabel('Time')
 plt.ylabel('PHI values')
 plt.legend()
-plt.title('PHI values over time')
+plt.title('PHI values for different u')
 plt.show()
