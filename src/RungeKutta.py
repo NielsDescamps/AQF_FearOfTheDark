@@ -20,7 +20,6 @@ def ode_system_Exponential(t,y,params):
     m = len(alpha)
     b = y[:2 * m]
     xi = gamma/(gamma+1)-1
-    m = len(xi)
     db_dt = alpha * b[:m] + xi * b[m:] - gamma / (np.matmul(delta.T, b[:m]) + b[m:] + gamma) + 1
     db_dt = np.concatenate((db_dt, np.zeros(m)), axis=0)
     da_dt = -np.dot(alpha * lamb, b[:m])
