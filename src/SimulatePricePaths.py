@@ -1,4 +1,5 @@
 import numpy as np
+import matplotlib.pyplot as plt
 
 # This file contains functions to generate price paths for the different dynamics
 
@@ -12,27 +13,31 @@ import numpy as np
 # - negative exponential generator
 # - location scale normal generator
 
-def gen_standard_normal():
-    return
+def gen_standard_normal(n_rows, n_columns):
+
+    return np.random.standard_normal(size=(n_rows, n_columns))
 
 def gen_corr_standard_normal():
     return
 
-def gen_poisson():
-    return
+def gen_poisson(lam, n_rows,n_columns):
 
-def gen_negative_exponential():
-    return 
+    return np.random.poisson(lam, size=(n_rows, n_columns))
 
-def gen_normal():
-    return 
+def gen_negative_exponential(scale, n_rows,n_columns):
+
+    return np.random.exponential(scale=scale, size=(n_rows,n_columns))
+
+def gen_normal(mu,sigma,n_rows, n_columns):
+    
+    return np.random.normal(loc=mu, scale=sigma, size=(n_rows, n_columns))
 
 
 ## 1. Jump dynamics
 # - Simulate lambda
 # - Simulate jump processd
 
-def simulate_jump_lambda_paths(m, num_paths, num_timesteps, tau):
+def simulate_jump_lambda_paths(m, num_paths, num_timesteps, tau, jump_params):
     """
     Simulate paths for lambda and the pure jump process for a series of assets
     
@@ -46,12 +51,19 @@ def simulate_jump_lambda_paths(m, num_paths, num_timesteps, tau):
     - Lambda process paths: matrix with dimensions(num_paths, num_timesteps)
     """
 
+    [alpha,delta,beta,sigma,lambda_bar] = jump_params
+
     # populate random increments
-    Epsilon = gen_normal() # or gen_negative_exponential()
+    Epsilon = [np.random.normal(beta[i],sigma[i],(num_paths,num_timesteps)) for i in range(m)] # or gen_negative_exponential()
 
     # output variable initialisation: m matrices for both J and Lambda
     dJ = [np.zeros((num_paths,num_timesteps+1)) for i in range(m)]
     Lambda = [np.zeros((num_paths,num_timesteps+1)) for i in range(m)]
+
+    #populate Lambda and dJ with first values
+    for i in range(m):
+        Lambda[i][:,0] = lambda_bar[i]
+        dJ[i][:,0] = 0
 
     # parameters
     dt = tau/num_timesteps
@@ -59,18 +71,81 @@ def simulate_jump_lambda_paths(m, num_paths, num_timesteps, tau):
     # SDE numerical implementation (still need to add iteration over assets i)
     for t in range(1,num_timesteps+1): # iterate over timesteps
         
-        SumDelta = np.zeros((num_paths, m))
+        SumDelta = [np.zeros(num_paths) for i in range(m)]
 
         for i in range(m): # iterate over all assets
-            
-            SumDelta[:, i] = np.sum(delta[i, :] * dJ[i][:, t-1], axis=1) # Compute SumDelta for each asset i
-            
-            Lambda[i][:,t] = Lambda[i][:,t-1] + alpha[i]*(lambda_bar[i]-Lambda[i][:,t-1])*dt + SumDelta
+            # Get intermediate sum of delta*dJ called 'SumDelta'
+            deltai_vec = np.array([delta[i,j] for j in range(m)])
 
-            dJ[i][:,t] =  Epsilon[i][:,t-1]*k[:,t-1]
+            # Perform element-wise multiplication
+            for p in range(num_paths):
+                dJi_vec = np.array([dJ[i][p,t-1] for i in range(m)])
+                SumDelta[i][p] = np.dot(deltai_vec,dJi_vec)
+        
+            # Compute Lambda timestep  
+            Lambda[i][:,t] = np.maximum(0, Lambda[i][:, t-1] + alpha[i]*(lambda_bar[i]-Lambda[i][:, t-1])*dt + SumDelta[i])
 
-        # TO BE FINISHED
-    return
+            # Generate row vector of Poisson draws with intensity equal to corresponding Lambda[t]
+            k = [np.random.poisson(Lambda[i][j,t-1]) for j in range(num_paths)]
+
+            # Compute dJ 
+            dJ[i][:,t] =  Epsilon[i][:,t-1]*k
+
+    return Lambda, dJ
+
+def test_dimensions(Lambda, dJ):
+    m = len(Lambda)
+    num_timesteps = Lambda[0].shape[1] - 1  # Subtract 1 for initial time step
+
+    print("Dimensions:")
+    for i in range(m):
+        print(f"Lambda[{i}]: {Lambda[i].shape}")
+        print(f"dJ[{i}]: {dJ[i].shape}")
+
+def plot_paths(Lambda, dJ, num_paths, num_timesteps):
+    m = len(Lambda)
+
+    # Plot Lambda paths
+    plt.figure(figsize=(12, 6))
+    for i in range(m):
+        plt.subplot(2, m, i + 1)
+        plt.plot(Lambda[i][:, 1:])
+        plt.title(f"Lambda[{i}] Paths")
+        plt.xlabel("Time")
+        plt.ylabel("Lambda")
+        plt.grid(True)
+
+    # Plot dJ paths
+    for i in range(m):
+        plt.subplot(2, m, m + i + 1)
+        plt.plot(dJ[i][:, 1:])
+        plt.title(f"dJ[{i}] Paths")
+        plt.xlabel("Time")
+        plt.ylabel("dJ")
+        plt.grid(True)
+
+    plt.tight_layout()
+    plt.show()
+
+#-------- RUN THIS-------
+# # Test code for simulate_jump_lambda
+# alpha = np.array([0.5, 0.5]) 
+# beta = np.array([0.1 , 0.1]) 
+# sigma = np.array([0.2 , 0.2]) 
+# delta = np.array([[0.1, 0.2], [0.2, 0.1]]) 
+# lambda_bar = np.array([0.005, 0.005]) 
+# params = [alpha,delta,beta,sigma,lambda_bar] 
+# m = len(alpha)
+
+# num_paths = 100
+# num_timesteps = 1000
+# tau = 1
+
+# Lambda, dJ = simulate_jump_lambda_paths(m,num_paths,num_timesteps,tau,params)
+
+# test_dimensions(Lambda,dJ)
+# plot_paths(Lambda,dJ,num_paths,num_timesteps)
+# --------------------------
 
 # 2. Full (Heston) dynamics
 # - Simulate log price process 
