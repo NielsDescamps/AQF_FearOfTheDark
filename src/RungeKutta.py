@@ -1,6 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
+
 def ode_system_Exponential(t,y,params):
     """
         Ths function defines the system of ODEs that need solving for Exponential jump size
@@ -85,7 +86,6 @@ def runge_kutta_4th_order_finalbc(ode_func, final_boundary_condition, t_span, h,
         k2 = h * ode_func(t - 0.5 * h, y - 0.5 * k1, params)
         k3 = h * ode_func(t - 0.5 * h, y - 0.5 * k2, params)
         k4 = h * ode_func(t - h, y - k3, params)
-
         y_values[i - 1] = y - (k1 + 2 * k2 + 2 * k3 + k4) / 6
 
     return t_values, y_values

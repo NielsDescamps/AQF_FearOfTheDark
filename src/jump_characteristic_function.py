@@ -3,7 +3,11 @@ from RungeKutta import ode_system_Exponential
 from RungeKutta import runge_kutta_4th_order_finalbc
 import numpy as np
 from scipy.interpolate import CubicSpline
+import scipy.integrate as int
 import matplotlib.pyplot as plt
+from src.heston_characteristic import heston_characteristic
+import scipy
+
 
 def mutualjump_characteristic_function(params,lambda_zero, t, T, h, u, index, jump_distribution):
     """
@@ -20,27 +24,27 @@ def mutualjump_characteristic_function(params,lambda_zero, t, T, h, u, index, ju
     - value of the characteristic function phi2_index(u,t,T)
     """
 
-    alpha = params[0]
-    m = len(alpha)
+    m = len(params[0])
 
     # 1. Construct Yt
     if t==0:
         # Assuming t=0 at time of evaluation Yt can be simplified strongly
-        zero_vec = np.zeros(m)
-        Yt = np.concatenate((lambda_zero,zero_vec),axis=0)
+        Yt = np.concatenate((lambda_zero,np.zeros(m)),axis=0)
     
-    else: 
+    else:
+        ## If this would be implemented probalby do it autoregressive
         print("t not 0 is not implemented")
         return KeyError
     
 
     # 2. Calculate a(v,t,T) and b(v,t,T)
     b_finalBCs = np.zeros(2*m,dtype=np.complex128)
+    ## I dont think it should be an i here, as that refers tho the joint dist in paper, but u alone is real
+    ## I also think not only the index should be u but the whole vector
     b_finalBCs[m+index] = u*1j
     a_finalBCs = np.array([0])
     final_conditions= np.concatenate((b_finalBCs,a_finalBCs))
 
-    print("final conditions: ",final_conditions)
     
     t_span = (t,T)
 
@@ -54,16 +58,59 @@ def mutualjump_characteristic_function(params,lambda_zero, t, T, h, u, index, ju
     bt = y_values[:,:2*m]
 
     a= at[0]
-    print("at: ",at)
 
     b= bt[0,:]
-    print("bt: ",bt)
-    print('b0: ',b)
 
-    print('Yt = ',Yt)
+    """
+    ##Solver with inherit package, may be quicker if it is optimized?
+    def tau_ode(t,y):
+        return -ode_system(t,y,params)
+    ##Method with solve_ivp make variable change to tau = T-t -> d_tau = -dt for initial cond
+    solution = int.solve_ivp(fun = tau_ode, t_span= t_span, y0 = final_conditions, method='RK45', t_eval=[T-t])
+    Yt = solution['y']
+    a = Yt[0]
+    b = Yt[1:]
+    """
     PHI = np.exp(a + np.dot(Yt,b)) 
     
     return PHI
+def joint_characteristic_function(u, t, T, kappa, eta, theta, rho, sigma0, r, q, S0, params, lambda_zero, h, index, jump_distribution):
+    # This is under the presumption that r and q are constant
+    return np.exp(1j*u*T*(r-q))*heston_characteristic(kappa, eta, theta, rho, sigma0, r, q, S0, T, u) * mutualjump_characteristic_function(params,lambda_zero, t, T, h, u, index, jump_distribution)
+
+def pdf_log_returns(characteristic_function, u_values):
+
+    def char_func(u):
+        return np.exp(u*1j -1/2*u**2)
+
+    N = 4096
+    alpha = 1.5
+    eta_grid = 0.25
+    lambda_val = 2 * np.pi / (N * eta_grid)
+    b = lambda_val * N / 2
+
+    # define grid of log-strikesAPE has size 4095
+    # k = np.arange(-b, b - lambda_val, lambda_val)
+
+    k = np.arange(-b, b, lambda_val)
+    # compute rho
+    v = np.arange(0, N * eta_grid, eta_grid)
+    u = v
+
+    # Inverse Fourier transform to obtain the probability density function
+    pdf = np.fft.ifftshift(np.fft.ifft(char_func(u)))
+
+    plt.figure()
+    #plt.plot(u_values, np.real(characteristic_function), label='standard normal pdf')
+    #plt.plot(u_values, np.imag(characteristic_function), label = 'standard imaginary')
+    #plt.plot(u, np.real(pdf), label = 'pdf u')
+    plt.plot(k, np.real(pdf), label = 'pdf k')
+    #plt.plot(u_values, np.imag(pdf), label = 'pdf imag')
+    plt.xlabel('u')
+    plt.ylabel('pdf')
+    plt.title('Probability density function')
+    plt.legend()
+    plt.show()
 
 def calc_priceFFT(characteristic_function, model_params, K, T, r, q, S0, type, integration_rule):
 
@@ -126,4 +173,6 @@ def calc_priceNonFFT(characteristic_function,model_params, K,T,r,q,S0,type):
     Should contain an implementation of formula (34) pricing formula
     """
     return True
+
+
 
