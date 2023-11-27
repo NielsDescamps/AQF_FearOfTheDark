@@ -1,6 +1,7 @@
 import numpy as np
 from scipy.interpolate import CubicSpline
 from heston_characteristic import heston_characteristic
+import matplotlib.pyplot as plt
 
 def Heston_FFT(kappa, eta, theta, rho, sigma0, K, T, S0, r, q, type, integration_rule):
     # integration_rule = 0 --> rectangular rule

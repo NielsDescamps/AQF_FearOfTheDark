@@ -7,7 +7,7 @@ import matplotlib.pyplot as plt
 from jump_characteristic_function import mutualjump_characteristic_function
 from jump_characteristic_function import joint_characteristic_function
 from heston_characteristic import heston_characteristic
-from jump_characteristic_function import pdf_log_returns
+from jump_characteristic_function import lewis_pricing_formula
 
 def import_model_data():
     #Import calibrated parameters
@@ -113,6 +113,9 @@ def run_models():
     # compute rho
     v = np.arange(-N * eta_grid / 2, N * eta_grid / 2, eta_grid)
     u = np.array(v)
+
+    lewis_pricing_formula(t, T, kappa, eta, theta, rho, sigma0, r, q, S0, jump_params, lambda_zero, h, index, jump_distribution)
+
 
     PHI_joint = [joint_characteristic_function(val, t, T, heston_params['kappa'], heston_params['eta'], heston_params['theta'],
                                       heston_params['rho'], heston_params['v0'], heston_config['r'], heston_config['q'],
