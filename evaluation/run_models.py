@@ -132,8 +132,8 @@ def run_models():
 
 
     plt.figure()
-    # plt.plot(u_values, np.real(characteristic_function), label='standard normal pdf')
-    # plt.plot(u_values, np.imag(characteristic_function), label = 'standard imaginary')
+    #plt.plot(u_values, np.real(characteristic_function), label='standard normal pdf')
+    #plt.plot(u_values, np.imag(characteristic_function), label = 'standard imaginary')
     plt.plot(k, np.abs(pdf_joint), label = 'pdf joint')
     plt.plot(k, np.abs(pdf_heston), label='pdf heston')
     #plt.plot(u, np.real(PHI_jump, label = 'jump abs')
