@@ -8,6 +8,9 @@ from jump_characteristic_function import mutualjump_characteristic_function
 from jump_characteristic_function import joint_characteristic_function
 from heston_characteristic import heston_characteristic
 from jump_characteristic_function import lewis_pricing_formula
+from scipy.fft import fft, rfft
+from scipy.fft import fftfreq, rfftfreq
+from scipy.stats import norm
 
 def import_model_data():
     #Import calibrated parameters
@@ -114,7 +117,7 @@ def run_models():
     v = np.arange(-N * eta_grid / 2, N * eta_grid / 2, eta_grid)
     u = np.array(v)
 
-    lewis_pricing_formula(t, T, kappa, eta, theta, rho, sigma0, r, q, S0, jump_params, lambda_zero, h, index, jump_distribution)
+    #lewis_pricing_formula(t, T, kappa, eta, theta, rho, sigma0, r, q, S0, jump_params, lambda_zero, h, index, jump_distribution)
 
 
     PHI_joint = [joint_characteristic_function(val, t, T, heston_params['kappa'], heston_params['eta'], heston_params['theta'],
@@ -129,6 +132,44 @@ def run_models():
     pdf_heston = np.fft.ifftshift(np.fft.ifft(PHI_heston))
     pdf_joint = np.fft.ifftshift(np.fft.ifft(PHI_joint))
     #pdf_joint = np.fft.ifftshift(np.fft.ifft(PHI_joint))
+
+    # b is the endvalue of which u is evaluated in the char func integral
+    b = 100
+    N = 1000
+    u, delta_u = np.linspace(-b, b, N, retstep=True)
+
+    #Create the frequency domain axis
+    beta = N * np.pi / (2*b)
+    z = np.linspace(-beta, beta, N)
+    alpha = np.exp(1j*b*z)*char_func(u-b-delta_u)*delta_u
+    pdf = np.abs(1/(2*np.pi)*np.fft.fft(alpha))**2
+    plt.figure()
+    plt.plot(z, pdf, label="from characteristic")
+    plt.plot(z, norm.pdf(z), label="norm pdf")
+    plt.plot(u, char_func(u), label = "characteristic")
+    plt.legend()
+    plt.xlabel('Frequency[Hz]')
+    plt.ylabel('Amplitude')
+    plt.title('Spectrum')
+    plt.show()
+
+
+
+    ## Implementation of correct fourier transform - doesnt work
+    sample_rate = 1/(u[1]-u[0])
+    N = len(u)
+    normalize = N / 2
+    frequency_axis = fftfreq(N, d=1.0 / sample_rate)
+    fourier = fft(char_func(u))
+    norm_amplitude = np.abs(fourier) / normalize
+    plt.figure()
+    plt.plot(frequency_axis, norm_amplitude, label = "from characteristic")
+    plt.plot(frequency_axis, norm.pdf(frequency_axis), label = "norm pdf")
+    plt.legend()
+    plt.xlabel('Frequency[Hz]')
+    plt.ylabel('Amplitude')
+    plt.title('Spectrum')
+    plt.show()
 
 
     plt.figure()
