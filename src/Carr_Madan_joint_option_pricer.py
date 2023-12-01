@@ -43,8 +43,8 @@ def Carr_Madan_joint_option_pricer(t, T, K, type, kappa, eta, theta, rho, sigma0
     # compute rho
     v = np.arange(0, N * eta_grid, eta_grid)
     u = v - (alpha + 1) * 1j
-    rho_val = np.exp(-r * T) * joint_characteristic_function(u, t, T, kappa, eta, theta, rho, sigma0, r, q, S0, params, lambda_zero, h, index, jump_distribution) / (
-                alpha ** 2 + alpha - v ** 2 + 1j * (2 * alpha + 1) * v)
+    rho_val = [np.exp(-r * T) * joint_characteristic_function(u[i], t, T, kappa, eta, theta, rho, sigma0, r, q, S0, params, lambda_zero, h, index, jump_distribution) / (
+                alpha ** 2 + alpha - v[i] ** 2 + 1j * (2 * alpha + 1) * v[i]) for i in range(len(u))]
 
     #No need for this too be variable as the simpson is more accurate and not computationally complex
     integration_rule = 1
