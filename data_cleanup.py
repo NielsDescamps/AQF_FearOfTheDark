@@ -99,7 +99,7 @@ def calc_params(df,S0,r,q):
     
     return df_out
 
-
+"""
 data = pd.read_csv('data_XNG/data_options.csv')
 
 exp_date = '16.01.2010' # or  '17.04.2010'
@@ -114,4 +114,4 @@ df_calc = calc_params(df,S0,r,q)
 print(df_calc)
 print('output shape: ',df_calc.shape)
 
-
+"""

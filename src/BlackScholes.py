@@ -57,7 +57,12 @@ def calc_implied_vol(market_price, S0, K, r, q, T, flag):
         return call * (1 - flag) + put * flag
 
     # Use brentq method to find implied volatility within a specified interval
-    implied_vol = brentq(lambda sigma: black_scholes(sigma) - market_price, a=0.01, b=2)
+    try:
+        implied_vol = brentq(lambda sigma: black_scholes(sigma) - market_price, a=0.01, b=2)
+    except ValueError:
+        print("Error in implied vol function")
+        implied_vol = None
+
 
     return implied_vol
 

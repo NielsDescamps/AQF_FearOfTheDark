@@ -47,96 +47,8 @@ def plot_prices(option_data, heston_prices):
     plt.legend(['FFT', 'Market'])
     plt.show()
 
-def run_models():
-    heston_params, heston_config, jump_process_params, jump_process_config, option_data = import_model_data()
 
-    maturities = get_maturities([heston_config['exp_date']], heston_config['date_of_retrieval'])[0]
-    strikes = option_data['strike']
-
-    # # Example parameters
-    jump_distribution = "Gaussian"
-
-    if jump_distribution == "Exponential":
-        jump_params = [np.array(jump_process_params['alpha']),
-                   np.array(jump_process_params['delta']),
-                   np.array(jump_process_params['gamma']),
-                   np.array(jump_process_params['lambda_bar'])
-                   ]
-    elif jump_distribution == "Gaussian":
-        jump_params = [np.array(jump_process_params['alpha']),
-                  np.array(jump_process_params['delta']),
-                  np.array(jump_process_params['beta']),
-                  np.array(jump_process_params['sigma']),
-                  np.array(jump_process_params['lambda_bar'])
-                  ]
-    kappa, eta, theta, rho, sigma0, r, q, S0 = heston_params['kappa'], heston_params['eta'], heston_params['theta'], heston_params['rho'], heston_params['v0'], heston_config['r'], heston_config['q'], heston_config['last_close']
-
-    lambda_zero = jump_params[-1]
-    t_values = np.linspace(0, 1, 100)  # Adjust the time range as needed
-    T = 1
-    t = 0
-    h = 0.1
-    u_values = np.linspace(-10, 10, 200)
-    # # u_values = [1.5]
-    index = 0  # Assuming you want to assess asset with index 0 (first asset)
-
-    #params = [heston_conf : heston_params : jump_conf : jump_params]
-    # # Example usage of mutualjump_characteristic_function
-
-    def norm_char(u_values):
-        return np.exp(1j*u_values -1/2*u_values**2*0.5232862836528391)
-
-    def char_func(u):
-        return np.exp(u * 1j - 1 / 2 * u ** 2)
-
-    N = 4096
-    alpha = 1.5
-    eta_grid = 0.25
-    lambda_val = 2 * np.pi / (N * eta_grid)
-    b = lambda_val * N / 2
-
-    # define grid of log-strikesAPE has size 4095
-    # k = np.arange(-b, b - lambda_val, lambda_val)
-
-    k = np.arange(-b, b, lambda_val)
-    # compute rho
-    v = np.arange(-N * eta_grid / 2, N * eta_grid / 2, eta_grid)
-    u = np.array(v)
-
-    #lewis_pricing_formula(t, T, kappa, eta, theta, rho, sigma0, r, q, S0, jump_params, lambda_zero, h, index, jump_distribution)
-
-
-    PHI_joint = [joint_characteristic_function(val, t, T, heston_params['kappa'], heston_params['eta'], heston_params['theta'],
-                                      heston_params['rho'], heston_params['v0'], heston_config['r'], heston_config['q'],
-                                      heston_config['last_close'], jump_params, lambda_zero, h, index,
-                                      jump_distribution) for val in u]
-
-    PHI_heston = [heston_characteristic(kappa, eta, theta, rho, sigma0, r, q, S0, T, val) for val in u]
-    PHI_jump = [mutualjump_characteristic_function(jump_params,lambda_zero, t, T, h, val, index, jump_distribution) for val in u]
-    # Inverse Fourier transform to obtain the probability density function
-    pdf = np.fft.ifftshift(np.fft.ifft(np.fft.fftshift(norm_char(u))))
-    pdf_heston = np.fft.ifftshift(np.fft.ifft(PHI_heston))
-    pdf_joint = np.fft.ifftshift(np.fft.ifft(PHI_joint))
-    #pdf_joint = np.fft.ifftshift(np.fft.ifft(PHI_joint))
-
-    k_heston, norm_heston = characteristic_to_pdf(u,np.abs(pdf_heston))
-    k_joint, norm_joint = characteristic_to_pdf(u, np.abs(pdf_joint))
-
-    plt.figure()
-    #plt.plot(u_values, np.real(characteristic_function), label='standard normal pdf')
-    #plt.plot(u_values, np.imag(characteristic_function), label = 'standard imaginary')
-    plt.plot(k_heston, norm_heston, label = 'pdf joint')
-    plt.plot(k_joint, norm_joint, label='pdf heston')
-    #plt.plot(u, np.real(PHI_jump, label = 'jump abs')
-    #plt.plot(k, np.real(pdf_joint), label='real norm')
-    # plt.plot(u_values, np.imag(pdf), label = 'pdf imag')
-    plt.xlabel('u')
-    plt.ylabel('pdf')
-    plt.title('Probability density function')
-    plt.legend()
-    plt.show()
-
-def plot_pdf():
+def plot_gaussian_pdf():
     # Set the jump distribution
     jump_distribution = "Gaussian"
     # Select index to model
@@ -154,7 +66,7 @@ def plot_pdf():
 
     if jump_distribution == "Exponential":
         jump_params = [np.array(jump_process_params['alpha']),
-                       np.array(jump_process_params['delta']),
+                       -np.array(jump_process_params['delta']),
                        np.array(jump_process_params['gamma']),
                        np.array(jump_process_params['lambda_bar'])
                        ]
@@ -184,12 +96,33 @@ def plot_pdf():
                                                    jump_distribution) for val in u]
         PHI_heston = [heston_characteristic(kappa, eta, theta, rho, sigma0, r, q, S0, T, val) for val in u]
 
+        jump_params[1] = np.array([[1, 1.1], [1.1, 1]])
+
+        PHI_joint_low = [joint_characteristic_function(val, t, T, heston_params['kappa'], heston_params['eta'],
+                                                   heston_params['theta'],
+                                                   heston_params['rho'], heston_params['v0'], heston_config['r'],
+                                                   heston_config['q'],
+                                                   heston_config['last_close'], jump_params, lambda_zero, h, index,
+                                                   jump_distribution) for val in u]
+
+        jump_params[1] = np.array([[20, 10], [10, 20]])
+        PHI_joint_high = [joint_characteristic_function(val, t, T, heston_params['kappa'], heston_params['eta'],
+                                                   heston_params['theta'],
+                                                   heston_params['rho'], heston_params['v0'], heston_config['r'],
+                                                   heston_config['q'],
+                                                   heston_config['last_close'], jump_params, lambda_zero, h, index,
+                                                   jump_distribution) for val in u]
+
         pdf_heston = np.abs(np.fft.ifftshift(np.fft.ifft(PHI_heston)))
         pdf_joint = np.abs(np.fft.ifftshift(np.fft.ifft(PHI_joint)))
+        pdf_joint_low = np.abs(np.fft.ifftshift(np.fft.ifft(PHI_joint_low)))
+        pdf_joint_high = np.abs(np.fft.ifftshift(np.fft.ifft(PHI_joint_high)))
 
         # Normalisation
         pdf_heston = pdf_heston / lambda_val
         pdf_joint = pdf_joint / lambda_val
+        pdf_joint_high = pdf_joint_high / lambda_val
+        pdf_joint_low = pdf_joint_low / lambda_val
         #Translation
         #TODO this is sloppy dont see where the need for translation comes from
         E_h = np.sum(k * pdf_heston * lambda_val)
@@ -198,21 +131,117 @@ def plot_pdf():
         k_joint = k - E_h
 
         plt.figure()
-        plt.plot(k_heston, pdf_heston, label='pdf Hawkes Model')
-        plt.plot(k_joint, pdf_joint, label='pdf Heston Model')
+        plt.plot(k_heston, pdf_heston, label='Heston Model')
+        plt.plot(k_joint, pdf_joint, label='Cross excitation medium')
+        plt.plot(k_joint, pdf_joint_low, label='Cross excitation low')
+        plt.plot(k_joint, pdf_joint_high, label='Cross excitation high')
         plt.xlabel('z [log-returns]')
         plt.ylabel('probability density')
-        plt.title('Probability density functions')
+        plt.title('Different Levels of Cross Excitiations Gaussian Jump')
         plt.legend()
         plt.show()
 
-def plot_option_smiles():
+def plot_exponential_pdf():
+    # Set the jump distribution
+    jump_distribution = "Exponential"
+    # Select index to model
+    index = 1
+    #Eval time
+    t = 0
+    # Maturity
+    T = 1
+    # time step for the evaluation of the set of ODEs
+    h = 0.1
+    # Import data
+    heston_calib_XNG_exponential_file = "./models_config_calibration/heston_calib_XNG_jump_exponential.json"
+    heston_params_XNG_E = json.load(open(heston_calib_XNG_exponential_file))
+    jump_params_XNG_exponential_file = "./models_config_calibration/jump_calib_XNG_jump_exponential.json"
+    jump_params_XNG_E = json.load(open(jump_params_XNG_exponential_file))
+
+    heston_params, heston_config, jump_process_params, jump_process_config, option_data = import_model_data()
+    kappa, eta, theta, rho, sigma0, r, q, S0 = heston_params['kappa'], heston_params['eta'], heston_params['theta'], \
+    heston_params['rho'], heston_params['v0'], heston_config['r'], heston_config['q'], heston_config['last_close']
+
+    jump_params = [np.array(jump_process_params['alpha']),
+                       np.array(jump_process_params['delta']),
+                       np.array(jump_process_params['gamma']),
+                       np.array(jump_process_params['lambda_bar'])]
+
+    N = 4096
+    alpha = 1.5
+    eta_grid = 0.25
+    lambda_val = 2 * np.pi / (N * eta_grid)
+    b = lambda_val * N / 2
+    k = np.arange(-b, b, lambda_val)
+    v = np.arange(-N * eta_grid / 2, N * eta_grid / 2, eta_grid)
+    u = np.array(v)
+    lambda_zero = jump_params[3]
+
+    PHI_joint = [joint_characteristic_function(val, t, T, heston_params['kappa'], heston_params['eta'],
+                                                   heston_params['theta'],
+                                                   heston_params['rho'], heston_params['v0'], heston_config['r'],
+                                                   heston_config['q'],
+                                                   heston_config['last_close'], jump_params, lambda_zero, h, index,
+                                                   jump_distribution) for val in u]
+    PHI_heston = [heston_characteristic(kappa, eta, theta, rho, sigma0, r, q, S0, T, val) for val in u]
+
+    jump_params[1] = np.array([[-10, -1.1], [-1.1, -10]])
+
+    PHI_joint_low = [joint_characteristic_function(val, t, T, heston_params['kappa'], heston_params['eta'],
+                                                   heston_params['theta'],
+                                                   heston_params['rho'], heston_params['v0'], heston_config['r'],
+                                                   heston_config['q'],
+                                                   heston_config['last_close'], jump_params, lambda_zero, h, index,
+                                                   jump_distribution) for val in u]
+
+    jump_params[1] = np.array([[-250, -30], [-30, -250]])
+    PHI_joint_high = [joint_characteristic_function(val, t, T, heston_params['kappa'], heston_params['eta'],
+                                                   heston_params['theta'],
+                                                   heston_params['rho'], heston_params['v0'], heston_config['r'],
+                                                   heston_config['q'],
+                                                   heston_config['last_close'], jump_params, lambda_zero, h, index,
+                                                   jump_distribution) for val in u]
+
+    pdf_heston = np.abs(np.fft.ifftshift(np.fft.ifft(PHI_heston)))
+    pdf_joint = np.abs(np.fft.ifftshift(np.fft.ifft(PHI_joint)))
+    pdf_joint_low = np.abs(np.fft.ifftshift(np.fft.ifft(PHI_joint_low)))
+    pdf_joint_high = np.abs(np.fft.ifftshift(np.fft.ifft(PHI_joint_high)))
+
+    # Normalisation
+    pdf_heston = pdf_heston / lambda_val
+    pdf_joint = pdf_joint / lambda_val
+    pdf_joint_high = pdf_joint_high / lambda_val
+    pdf_joint_low = pdf_joint_low / lambda_val
+    #Translation
+    #TODO this is sloppy dont see where the need for translation comes from
+    E_h = np.sum(k * pdf_heston * lambda_val)
+    E_j = np.sum(k * pdf_joint * lambda_val)
+    k_heston = k - E_h
+    k_joint = k - E_h
+
+    plt.figure()
+    plt.plot(k_heston, pdf_heston, label='Heston Model')
+    plt.plot(k_joint, pdf_joint, label='Cross excitation medium')
+    plt.plot(k_joint, pdf_joint_low, label='Cross excitation low')
+    plt.plot(k_joint, pdf_joint_high, label='Cross excitation high')
+    plt.xlabel('z [log-returns]')
+    plt.ylabel('probability density')
+    plt.title('Different Levels of Cross Excitiations Exponential Jump')
+    plt.legend()
+    plt.show()
+
+def plot_XNG():
 
     #Import the necessary data from data_cleanup.py
     data = pd.read_csv('data_XNG/data_options.csv')
 
     heston_calib_XNG_gaussian_file = "./models_config_calibration/heston_calib_XNG_jump_gaussian.json"
     heston_params_XNG_G = json.load(open(heston_calib_XNG_gaussian_file))
+
+    heston_calib_XNG_exponential_file = "./models_config_calibration/heston_calib_XNG_jump_exponential.json"
+    heston_params_XNG_E = json.load(open(heston_calib_XNG_exponential_file))
+    jump_params_XNG_exponential_file = "./models_config_calibration/jump_calib_XNG_jump_exponential.json"
+    jump_params_XNG_E = json.load(open(jump_params_XNG_exponential_file))
 
     exp_date = '16.01.2010'  # or  '17.04.2010'
     price_date = '04.01.2010'
@@ -269,19 +298,32 @@ def plot_option_smiles():
                        np.array(jump_process_params['sigma']),
                        np.array(jump_process_params['lambda_bar'])
                        ]
-    lambda_zero = jump_params[3]
+    lambda_zero_G = jump_params[3]
     kappa, eta, theta, rho, v0, r, q, S0 = heston_params['kappa'], heston_params['eta'], heston_params['theta'], \
     heston_params['rho'], heston_params['v0'], heston_config['r'], heston_config['q'], heston_config['last_close']
 
     kappa_XNG_G, eta_XNG_G, theta_XNG_G, rho_XNG_G, sigma0_XNG_G = heston_params_XNG_G['kappa'], heston_params_XNG_G['eta'], heston_params_XNG_G['theta'], \
         heston_params_XNG_G['rho'], heston_params_XNG_G['v0']
 
+    kappa_XNG_E, eta_XNG_E, theta_XNG_E, rho_XNG_E, sigma0_XNG_E = heston_params_XNG_E['kappa'], heston_params_XNG_E[
+        'eta'], heston_params_XNG_E['theta'], \
+        heston_params_XNG_E['rho'], heston_params_XNG_E['v0']
+    jump_params_E = [np.array(jump_params_XNG_E['alpha']),
+                   np.array(jump_params_XNG_E['delta']),
+                   np.array(jump_params_XNG_E['gamma']),
+                   np.array(jump_params_XNG_E['lambda_bar'])]
+
+    lambda_zero_E = np.array(jump_params_XNG_E['lambda_bar'])
+
     BS_pricing = []
     heston_pricing = []
-    jump_pricing = []
+    jump_pricing_G = []
+    jump_pricing_E = []
     heston_impliedVol = []
-    jump_impliedVol = []
+    jump_impliedVol_G = []
+    jump_impliedVol_E = []
     market_impliedVol = []
+    BS_impliedVol = []
     for index, row in df_calc.iterrows():
         type = row["Type"]
         if type == 'C':
@@ -302,22 +344,32 @@ def plot_option_smiles():
         BS_call_price = BS_price(np.sqrt(eta), S0, K, r, q, T, type_nbr)
         BS_pricing.append(BS_call_price)
 
-        jump_price = Carr_Madan_joint_option_pricer(t, T, K, type, kappa_XNG_G, eta_XNG_G, theta_XNG_G, rho_XNG_G, np.sqrt(sigma0_XNG_G), r, q, S0, jump_params, lambda_zero, h, indice_index, jump_distribution)
-        jump_pricing.append(jump_price)
+        jump_price_G = Carr_Madan_joint_option_pricer(t, T, K, type, kappa_XNG_G, eta_XNG_G, theta_XNG_G, rho_XNG_G, np.sqrt(sigma0_XNG_G), r, q, S0, jump_params, lambda_zero_G, h, indice_index, jump_distribution)
+        jump_pricing_G.append(jump_price_G)
+
+        jump_price_E = Carr_Madan_joint_option_pricer(t, T, K, type, kappa_XNG_E, eta_XNG_E, theta_XNG_E, rho_XNG_E,
+                                                      np.sqrt(sigma0_XNG_E), r, q, S0, jump_params_E, lambda_zero_E, h,
+                                                      indice_index, "Exponential")
+        jump_pricing_E.append(jump_price_E)
 
 
-        ##TODO the imped vol doesnt work for some reason
+        # implied vol doesnt work on all values so have to sort None vals
         heston_impliedVol.append(calc_implied_vol(heston_call_price, S0, K, r, q, T, type_nbr))
-        jump_impliedVol.append(calc_implied_vol(jump_price, S0, K, r, q, T, type_nbr))
+        jump_impliedVol_G.append(calc_implied_vol(jump_price_G, S0, K, r, q, T, type_nbr))
         market_impliedVol.append(calc_implied_vol(MQ, S0, K, r, q, T, type_nbr))
+        jump_impliedVol_E.append(calc_implied_vol(jump_price_E, S0, K, r, q, T, type_nbr))
+        #BS_impliedVol.append(calc_implied_vol(BS_call_price, S0, K, r, q, T, type_nbr))
 
 
     df_calc["Heston Call Prices"] = heston_pricing
     df_calc["Black Scholes Call Prices"] = BS_pricing
-    df_calc["Jump model Call Price"] = jump_pricing
+    df_calc["Jump model Call Price G"] = jump_pricing_G
+    df_calc["Jump model Call Price E"] = jump_pricing_E
     df_calc["Heston ImpliedVol"] = heston_impliedVol
-    df_calc["Jump ImpliedVol"] = jump_impliedVol
+    df_calc["Jump ImpliedVol G"] = jump_impliedVol_G
+    df_calc["Jump ImpliedVol E"] = jump_impliedVol_E
     df_calc["Market ImpliedVol"] = market_impliedVol
+    #df_calc["BS ImpliedVol"] = BS_impliedVol
 
     df_calc.dropna()
 
@@ -326,7 +378,8 @@ def plot_option_smiles():
     plt.plot(df_calc["Strike"], df_calc["MQ"], 'bo', label="Market Midquotes", linewidth=1.1)
     plt.plot(df_calc["Strike"], df_calc["Heston Call Prices"], 'r+', label="Heston call price", linewidth=1.1)
     plt.plot(df_calc["Strike"], df_calc["Black Scholes Call Prices"], '+', label="Black Scholes call price", linewidth=1.1)
-    plt.plot(df_calc["Strike"], df_calc["Jump model Call Price"], 'v', label="Jump model Call price", linewidth=1.1)
+    plt.plot(df_calc["Strike"], df_calc["Jump model Call Price G"], 'v', label="Jump model Call price", linewidth=1.1)
+    plt.plot(df_calc["Strike"], df_calc["Jump model Call Price E"], 'g2', label="Jump model Call price", linewidth=1.1)
     plt.xlabel('Strikes')
     plt.ylabel('Call Price')
     plt.title('Pricing model')
@@ -337,17 +390,19 @@ def plot_option_smiles():
     plt.figure()
     plt.plot(df_calc["moneyness"], df_calc["ImpliedVol"], 'bo', label="Market implied vol", linewidth=1.1)
     plt.plot(df_calc["moneyness"], df_calc["Heston ImpliedVol"], 'r+', label="Heston implied vol", linewidth=1.1)
-    plt.plot(df_calc["moneyness"], df_calc["Jump ImpliedVol"], 'v', label="Jump model implied vol", linewidth=1.1)
+    plt.plot(df_calc["moneyness"], df_calc["Jump ImpliedVol G"], 'v', label="Jump model implied vol", linewidth=1.1)
+    plt.plot(df_calc["moneyness"], df_calc["Jump ImpliedVol E"], 'g2', label="Jump model implied vol", linewidth=1.1)
     plt.xlabel('Moneyness K/S0')
     plt.ylabel('Implied volatility')
     plt.title('Pricing models')
     plt.legend()
     plt.show()
 
+plot_exponential_pdf()
+plot_gaussian_pdf()
 
 
 
-plot_option_smiles()
 
 
 
