@@ -1,6 +1,6 @@
 import pandas as pd
 
-def filter_data(data,expiration_date,price_date,ticker):
+def filter_data(data,expiration_date,price_date,ticker,type):
     """
     Returns a dataframe with filtered data
 
@@ -53,15 +53,26 @@ def filter_data(data,expiration_date,price_date,ticker):
         df[column] = df[column].astype(str)
     
 
-    # 2. Filter for the date of pricing, expiration date and ticker
+    # 2. Filter for the date of pricing, expiration date, ticker and type
     df = df[df['PriceDate'] == price_date]
     df = df[df['ExpirationDate'] == expiration_date]
     df = df[df['Ticker'] == ticker]
+
+    if type == 0:
+        Type = 'C'
+    elif type == 1:
+        Type = 'P'
+    
+    df = df[df['Type']==Type]
+    df = df.reset_index(drop=True)
 
     # 3. Convert dates to datetime objects
     df['PriceDate'] = pd.to_datetime(df['PriceDate'], format='%d.%m.%Y')
     df['ExpirationDate'] = pd.to_datetime(df['ExpirationDate'], format='%d.%m.%Y')
     
+    # 4. Set Ask to zero if equal to 5
+    # df.loc[df['Ask'] == 5, 'Ask'] = 0
+
     return df
 
 def calc_params(df,S0,r,q):
@@ -96,22 +107,22 @@ def calc_params(df,S0,r,q):
     df_out['R'] = r
     df_out['Q'] = q
     df_out['S0'] = S0
+    df_out = df_out.reset_index(drop=True)
     
     return df_out
 
-"""
-data = pd.read_csv('data_XNG/data_options.csv')
+# data = pd.read_csv('data_XNG/data_options.csv')
+# exp_date = '16.01.2010' # or  '17.04.2010'
+# price_date = '04.01.2010'
+# ticker = 'XNG' #or BTK, XBD and MSH (use XNG, others have less quotes per day)
+# type = 1
+# df = filter_data(data,exp_date,price_date,ticker,type)
 
-exp_date = '16.01.2010' # or  '17.04.2010'
-price_date = '04.01.2010'
-ticker = 'XNG' #or BTK, XBD and MSH (use XNG, others have less quotes per day)
-df = filter_data(data,exp_date,price_date,ticker)
+# S0 = 100
+# r=0.05
+# q=0.02
+# df_calc = calc_params(df,S0,r,q)
+# print(df_calc)
+# print('output shape: ',df_calc.shape)
 
-S0 = 100
-r=0.05
-q=0.02
-df_calc = calc_params(df,S0,r,q)
-print(df_calc)
-print('output shape: ',df_calc.shape)
 
-"""

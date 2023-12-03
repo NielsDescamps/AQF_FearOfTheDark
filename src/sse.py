@@ -1,4 +1,4 @@
-from Heston_FFT import Heston_FFT
+from src.Heston_FFT import Heston_FFT
 
 def sse(kappa, eta, theta, rho, sigma0, K, T, S0, r, q, type, integration_rule, market_price):
     heston_price = [0] * len(K)

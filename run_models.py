@@ -2,7 +2,6 @@
 import json
 from src.Heston_FFT import Heston_FFT
 from src.load_data import load_data
-from src.get_maturities import get_maturities
 import numpy as np
 import matplotlib.pyplot as plt
 from src.jump_characteristic_function import joint_characteristic_function
@@ -29,9 +28,7 @@ def import_model_data():
     jump_process_conf_file = "./models_config_calibration/heston_config.json"
     jump_process_config = json.load(open(jump_process_conf_file))
 
-    data = load_data(heston_config['save_dir'], heston_config['exp_date'], heston_config['option_type'])
-
-    return heston_params, heston_config, jump_process_params, jump_process_config, data
+    return heston_params, heston_config, jump_process_params, jump_process_config
 
 def plot_gaussian_pdf():
     # Set the jump distribution
@@ -45,7 +42,7 @@ def plot_gaussian_pdf():
     # time step for the evaluation of the set of ODEs
     h = 0.1
     # Import data
-    heston_params, heston_config, jump_process_params, jump_process_config, option_data = import_model_data()
+    heston_params, heston_config, jump_process_params, jump_process_config = import_model_data()
     kappa, eta, theta, rho, sigma0, r, q, S0 = heston_params['kappa'], heston_params['eta'], heston_params['theta'], \
     heston_params['rho'], heston_params['v0'], heston_config['r'], heston_config['q'], heston_config['last_close']
 
@@ -135,7 +132,7 @@ def plot_exponential_pdf():
     # time step for the evaluation of the set of ODEs
     h = 0.1
     # Import data
-    heston_params, heston_config, jump_process_params, jump_process_config, option_data = import_model_data()
+    heston_params, heston_config, jump_process_params, jump_process_config = import_model_data()
     kappa, eta, theta, rho, sigma0, r, q, S0 = heston_params['kappa'], heston_params['eta'], heston_params['theta'], \
     heston_params['rho'], heston_params['v0'], heston_config['r'], heston_config['q'], heston_config['last_close']
 
@@ -215,7 +212,7 @@ def plot_heston_pdf():
     # time step for the evaluation of the set of ODEs
     h = 0.1
 
-    heston_params, heston_config, jump_process_params, jump_process_config, option_data = import_model_data()
+    heston_params, heston_config, jump_process_params, jump_process_config = import_model_data()
     kappa, eta, theta, rho, sigma0, r, q, S0 = heston_params['kappa'], heston_params['eta'], heston_params['theta'], \
         heston_params['rho'], heston_params['v0'], heston_config['r'], heston_config['q'], heston_config['last_close']
 
@@ -303,9 +300,8 @@ def plot_XNG_16_01():
     T = 1
     # time step for the evaluation of the set of ODEs
     h = 0.1
-    heston_params, heston_config, jump_process_params, jump_process_config, option_data = import_model_data()
+    heston_params, heston_config, jump_process_params, jump_process_config = import_model_data()
 
-    maturities = get_maturities([heston_config['exp_date']], heston_config['date_of_retrieval'])[0]
 
     # # Example parameters
     jump_distribution = "Gaussian"
@@ -448,7 +444,7 @@ def plot_XNG_17_04():
     S0 = (Open+Close)/2
 
     ticker = 'XNG'  # or BTK, XBD and MSH (use XNG, others have less quotes per day)
-    df = filter_data(data, exp_date, price_date, ticker)
+    df = filter_data(data, exp_date, price_date, ticker, 0)
     t = 0
     r = 0.05
     q = 0.02
@@ -468,10 +464,7 @@ def plot_XNG_17_04():
     T = 1
     # time step for the evaluation of the set of ODEs
     h = 0.1
-    heston_params, heston_config, jump_process_params, jump_process_config, option_data = import_model_data()
-
-    maturities = get_maturities([heston_config['exp_date']], heston_config['date_of_retrieval'])[0]
-    strikes = option_data['strike']
+    heston_params, heston_config, jump_process_params, jump_process_config = import_model_data()
 
     # # Example parameters
     jump_distribution = "Gaussian"
@@ -619,7 +612,7 @@ def plot_BTK_17_04():
     S0 = (Open+Close)/2
 
     ticker = 'BTK'  # or BTK, XBD and MSH (use XNG, others have less quotes per day)
-    df = filter_data(data, exp_date, price_date, ticker)
+    df = filter_data(data, exp_date, price_date, ticker, 0)
     t = 0
     r = 0.05
     q = 0.02
@@ -787,7 +780,7 @@ def plot_BTK_16_01():
     S0 = (Open+Close)/2
 
     ticker = 'BTK'  # or BTK, XBD and MSH (use XNG, others have less quotes per day)
-    df = filter_data(data, exp_date, price_date, ticker)
+    df = filter_data(data, exp_date, price_date, ticker, 0)
     t = 0
     r = 0.05
     q = 0.02
@@ -934,7 +927,8 @@ def plot_BTK_16_01():
 plot_BTK_16_01()
 plot_exponential_pdf()
 
-
+plot_BTK_17_04()
+plot_exponential_pdf()
 
 
 
