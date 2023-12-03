@@ -4,7 +4,7 @@ from jump_characteristic_function import joint_characteristic_function
 
 
 """
-This function uses the Carr-Madan pricing fomrula to calculate the price of a option
+This function uses the Carr-Madan pricing formula to calculate the price of a option
 The underlying model joint heston & contagoius jump model
 This function is not independently verified, but compared to heston model where it obtains reasonable results
 

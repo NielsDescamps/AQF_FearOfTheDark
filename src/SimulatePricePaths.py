@@ -3,11 +3,7 @@ import matplotlib.pyplot as plt
 from generate_random import generate_randomNegExp
 from generate_random import plot_neg_exp_density
 
-# This file contains functions to generate price paths for the different dynamics
-
-## 1. Jump dynamics
-# - Simulate lambda
-# - Simulate jump processd
+# functions to simulate the asset dynamics
 def construct_J_profile(dJ):
     """
     Construct the profile of J (cumulative sum of previous dJ).
@@ -73,7 +69,7 @@ def simulate_jump_lambda_paths(m, num_paths, num_timesteps, tau, jump_params,dis
 
         for i in range(m): # iterate over all assets
             # Generate row vector of Poisson draws with intensity equal to corresponding Lambda[t]
-            k = np.random.poisson(Lambda[i][:,t-1])*dt
+            k = np.random.poisson(Lambda[i][:,t-1]*dt)
 
             # Compute dJ 
             dJ[i][:,t] =  Epsilon[i][:,t-1]*k
@@ -94,113 +90,6 @@ def simulate_jump_lambda_paths(m, num_paths, num_timesteps, tau, jump_params,dis
     J = construct_J_profile(dJ)
 
     return Lambda, dJ, J, LT_mean
-
-def simulate_jump_lambda_paths_alternative(m, num_paths, num_timesteps, tau, jump_params,distribution,distr_params):
-    """
-    Simulate paths for lambda and the pure jump process for a series of assets
-    
-    Parameters:
-    - num_paths: number of paths to generate 
-    - num_timesteps: number of timesteps 
-    - tau: time until maturity expressed in (?)
-
-    Output:
-    - Jump process paths: matrix with dimensions (num_paths, num_timesteps)
-    - Lambda process paths: matrix with dimensions(num_paths, num_timesteps)
-    """
-
-    [alpha,delta,lambda_bar] = jump_params
-    alphai = alpha[0]
-    deltaii = delta[0,0]
-    delta_cross = delta[0,1]
-    lambda_bari =lambda_bar[0] 
-
-    if distribution=='Gaussian':
-        [beta, sigma] = distr_params
-        Epsilon = [np.random.normal(beta[i],sigma[i],(num_paths,num_timesteps)) for i in range(m)] # or gen_negative_exponential()
-
-    elif distribution=='Exponential':
-        [gamma] = distr_params
-        Epsilon = [generate_randomNegExp(gamma[i],num_paths,num_timesteps) for i in range(m)]
-        
-    
-    # output variable initialisation: m matrices for both J and Lambda
-    dJ = [np.zeros((num_paths,num_timesteps+1)) for i in range(m)]
-    Lambda = [np.zeros((num_paths,num_timesteps+1)) for i in range(m)]
-
-    #populate Lambda and dJ with first values
-    for i in range(m):
-        Lambda[i][:,0] = lambda_bari
-        dJ[i][:,0] = 0
-
-    # parameters
-    dt = tau/num_timesteps
-
-    # SDE numerical implementation (still need to add iteration over assets i)
-    for t in range(1,num_timesteps+1): # iterate over timesteps
-        
-        SumDelta0 = np.zeros(num_paths)
-        SumDelta1 = np.zeros(num_paths)
-
-        
-        # Get intermediate sum of delta*dJ called 'SumDelta'
-        delta0_vec = np.array([deltaii,delta_cross])
-        delta1_vec = np.array([delta_cross,deltaii])
-
-        # Perform element-wise multiplication
-        for p in range(num_paths):
-            dJ_vec = np.array([dJ[0][p,t-1], dJ[1][p,t-1]])
-            SumDelta0[p] = np.dot(delta0_vec,dJ_vec)
-            SumDelta1[p] = np.dot(delta1_vec,dJ_vec)
-
-        SumDelta = np.array([SumDelta0,SumDelta1])
-
-        # Compute Lambda timestep  
-        for i in range(2):
-            Lambda[i][:,t] = np.maximum(0, Lambda[i][:, t-1] + alpha[i]*(lambda_bar[i]-Lambda[i][:, t-1])*dt + SumDelta[i])
-
-        # Generate row vector of Poisson draws with intensity equal to corresponding Lambda[t]
-            k = [np.random.poisson(Lambda[i][j,t-1]) for j in range(num_paths)]
-            print('k vector: ',k)
-        # Compute dJ 
-            dJ[i][:,t] =  Epsilon[i][:,t-1]*k
-
-    return Lambda, dJ
-
-def simulate_jump_lambda_paths_single(m,num_paths,num_timesteps,tau,jump_params,distribution,distr_params):
-    """
-    Simulates the lambda and jump process of a single index with self-exciting properties
-    """
-    [alpha,delta,lambda_bar] = jump_params
-    alpha = alpha[0]
-    delta = delta[0,0]
-    lambda_bar = lambda_bar[0]
-
-    dt = tau/num_timesteps
-
-    if distribution=='Gaussian':
-        [beta, sigma] = distr_params
-        Epsilon = np.random.normal(beta[0],sigma[0],(num_paths,num_timesteps)) # or gen_negative_exponential()
-
-
-    dJ = np.zeros((num_paths,num_timesteps+1)) 
-    Lambda = np.zeros((num_paths,num_timesteps+1)) 
-
-    for t in range(1,num_timesteps+1):
-
-        k = np.random.poisson(Lambda[:,t-1])*dt
-
-        dJ[:,t] =  Epsilon[:,t-1]*k
-        
-        
-        print(k)
-        print(Epsilon[:,t-1])
-        print(dJ[:,t])
-
-        Lambda[:,t] = np.maximum(0, Lambda[:, t-1] + alpha*(lambda_bar-Lambda[:, t-1])*dt + delta*dJ[:,t])
-
-    return Lambda, dJ
-
 
 def simulate_heston_paths(num_paths, num_timesteps, tau, r, q, S0, heston_params, discretisation_scheme,dJ):
 
@@ -248,13 +137,13 @@ def simulate_all_paths(m,num_paths, num_timesteps, tau, r, q ,S0, jump_params, d
 
     return Lambda, dJ, J, S, V
 
-
-def plot_heston_paths(S, V, num_paths, num_timesteps):
+# functions to plot results 
+def plot_heston_paths(S, V, num_paths, num_timesteps, LT_variance):
     # Plot Price Paths
     plt.figure(figsize=(12, 6))
     plt.subplot(2, 1, 1)
     for i in range(num_paths):
-        plt.plot(S[i, :], label=f'Path {i + 1}')
+        plt.plot(S[i, :], label=f'Path {i + 1}')    
     plt.title('Price Paths')
     plt.xlabel('Time Steps')
     plt.ylabel('Price')
@@ -265,6 +154,7 @@ def plot_heston_paths(S, V, num_paths, num_timesteps):
     plt.subplot(2, 1, 2)
     for i in range(num_paths):
         plt.plot(V[i, :], label=f'Path {i + 1}')
+    plt.axhline(y=np.sqrt(LT_variance), color='red', linestyle='--', label=f'LT vol')
     plt.title('Volatility Paths')
     plt.xlabel('Time Steps')
     plt.ylabel('Volatility')
@@ -296,7 +186,7 @@ def plot_lambda_dJ_paths(Lambda, dJ, num_paths, num_timesteps,LT_mean=None):
         plt.subplot(2, m, m + i + 1)
         for path in range(num_paths):
             plt.plot(dJ[i][path, 1:], label=f'Path {path + 1}')
-        plt.title(f"J Paths for asset {i+1}")
+        plt.title(f"dJ Paths for asset {i+1}")
         plt.xlabel("Time Steps")
         plt.ylabel("dJ")
         # plt.legend()
@@ -306,13 +196,13 @@ def plot_lambda_dJ_paths(Lambda, dJ, num_paths, num_timesteps,LT_mean=None):
 
     plt.show()
 
-    save_choice = input("Do you want to save the plot? (y/n): ").lower()
+    # save_choice = input("Do you want to save the plot? (y/n): ").lower()
     
-    if save_choice == 'y':
-        save_path = input("Enter the file name to save the plot (excluding extension, e.g., 'plot.png'): ")
-        save_path = "figures/"+save_path+".png"
-        plt.savefig(save_path)
-        print(f"Plot saved at {save_path}")
+    # if save_choice == 'y':
+    #     save_path = input("Enter the file name to save the plot (excluding extension, e.g., 'plot.png'): ")
+    #     save_path = "figures/"+save_path+".png"
+    #     plt.savefig(save_path)
+    #     print(f"Plot saved at {save_path}")
     
     return
 
@@ -415,7 +305,7 @@ def plot_lambda_profiles_and_difference(Lambda, num_paths,  LT_mean, index1, ind
     relative_difference = asset2_lambda[0,:-1]/asset1_lambda[0,1:]
 
     # Plot the profiles and the difference in separate subplots
-    plt.figure(1,figsize=(12, 9))
+    plt.figure(1,figsize=(12, 8))
 
     # Plot Asset 1 Lambda Profile
     plt.subplot(2, 1, 1)
@@ -438,14 +328,24 @@ def plot_lambda_profiles_and_difference(Lambda, num_paths,  LT_mean, index1, ind
     plt.ylabel(f"Lambda asset {index2+1}")
     plt.grid(True)
 
-    # Plot Absolute Difference
+    # Plot difference between lambda and its long term mean
     plt.figure(2,figsize=(7,4))
     for path in range(num_paths):
-        plt.plot(difference[path, 1:])
-    plt.title(f"Difference between lambda of asset {index1+1} and {index2+1}")
-    plt.xlabel("Time Steps")
-    plt.ylabel("Absolute Difference")
+        plt.plot(Lambda[index1][path, 1:]-LT_mean[index1])
+    plt.title(f"Difference between lambda and long-term mean")
+    plt.xlabel("Time steps")
+    plt.ylabel("Absolute difference")
     plt.grid(True)
+
+    # plt.figure(3,figsize=(7,4))
+    # for path in range(num_paths):
+    #     plt.plot(Lambda[index2][path, 1:]-LT_mean[index2])
+    # plt.title(f"Difference between lambda and long-term mean of asset {index2+1}")
+    # plt.xlabel("Time Steps")
+    # plt.ylabel("Absolute Difference")
+    # plt.grid(True)
+
+
 
     # plt.figure(3,figsize=(7,4))
     # plt.plot(relative_difference)
@@ -455,22 +355,23 @@ def plot_lambda_profiles_and_difference(Lambda, num_paths,  LT_mean, index1, ind
     # plt.grid(True)
 
     plt.tight_layout()
+
 # -----------------------------------------------#
 m = 2
-num_paths = 1
+num_paths = 10
 num_timesteps = 1000
 tau = 1
 
 # JUMP parameters
 #  - GAUSSIAN 
-alpha = np.array([36.6, 36.6]) 
+alpha = np.array([36.6, 36.6])  # [36.6, 36.6]
 lambda_bar = np.array([0.56, 0.56]) 
-delta = np.array([[13.1, 100], [1.6, 13.1]]) 
+delta = np.array([[13.1, 1.6], [1.6, 13.1]]) # [13.1, 1.1], [1.6, 13.1]]
 jump_params = [alpha,delta,lambda_bar]
 
 distribution = 'Gaussian'
 sigma = np.array([0.12 , 0.12]) 
-beta = np.array([-0.14 , -0.14]) 
+beta = np.array([0.14 , 0.14]) 
 distr_params = [beta,sigma]
 
 LT_mean = [(alpha[i]*lambda_bar[i])/(alpha[i] - sum([delta[i,j]*beta[j] for j in range(m)]))for i in range(m)]
@@ -489,22 +390,21 @@ LT_mean = [(alpha[i]*lambda_bar[i])/(alpha[i] - sum([delta[i,j]*beta[j] for j in
 
 # HESTON parameters
 r = 0.05
-q = 0.0
+q = 0.02
 S0 = 100.0
-kappa = 20 # mean reversion speed
-eta = 0.015 # LT vol 
-theta = 1.3 # vol of vol 
-rho = -0.5 #correlation 
+kappa = 8.7 # mean reversion speed
+eta = 0.015 # LT vol  0.015
+theta = 0.013 # vol of vol 
+rho = -0.49 #correlation 
 v0 = 0.014
-heston_params = [kappa, eta, theta, rho, v0]
+heston_params = [kappa, np.sqrt(eta), theta, rho, np.sqrt(v0)]
 discretisation_scheme = 0
 
-# ----------------------------------------------- #
-
-Lambda, dJ, J, S, V = simulate_all_paths(m,num_paths, num_timesteps, tau, r, q ,S0, jump_params, distribution, distr_params,heston_params, discretisation_scheme)
+# -----------------Code to run ------------------ #
+# Lambda, dJ, J, S, V = simulate_all_paths(m,num_paths, num_timesteps, tau, r, q ,S0, jump_params, distribution, distr_params,heston_params, discretisation_scheme)
 # for i in range(m):
-#     plot_lambda_price_vol_paths(Lambda[i],S[i],V[i],num_paths,num_timesteps)
-#     plot_heston_paths(S[i],V[i],num_paths,num_timesteps)
+#   plot_lambda_price_vol_paths(Lambda[i],S[i],V[i],num_paths,num_timesteps)
+# plot_heston_paths(S[0],V[0],num_paths,num_timesteps,eta)
 # plot_lambda_dJ_paths(Lambda,dJ,num_paths,num_timesteps,LT_mean)
 # plot_lambda_profiles_and_difference(Lambda,num_paths,LT_mean,0,1)
 
