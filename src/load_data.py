@@ -9,7 +9,6 @@ def load_data(save_dir, exp_date, type):
     ticker = 'SEDG'
     filename = save_dir + '/' + ticker + '_' + type_prod + '_chain_' + exp_date + ".csv"
     absolute_path = os.path.abspath(filename)
-    print(absolute_path)
     data = pd.read_csv(absolute_path)
     out = data
     return out

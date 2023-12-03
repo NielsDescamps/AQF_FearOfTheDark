@@ -5,6 +5,7 @@ from src.Heston_FFT import Heston_FFT
 from src.sse import sse
 from src.load_data import load_data
 from src.get_maturities import get_maturities
+from src.BlackScholes import BS_price
 
 
 # Import options data from Yahoo Finance
@@ -23,7 +24,8 @@ q = 0
 S0 = 83.2
 method = 0
 integration_rule = 1
-T = get_maturities([exp_date], date_of_retrieval)[0]  # Replace with your function for getting maturities
+T = get_maturities([exp_date], date_of_retrieval)[0]# Replace with your function for getting maturities
+
 K = data['strike']
 
 midquote = (data['ask'] + data['bid']) / 2
@@ -84,26 +86,30 @@ for i in range(m):
 plt.xlabel('Timestep')
 plt.ylabel('St')
 plt.title('Price paths')
-plt.savefig('/generated_plots/Price_paths_MC_1205.png')
+#plt.savefig('/generated_plots/Price_paths_MC_1205.png')
 plt.show()
 
 # 5. Check: compare prices of European options
 EC_MC = np.zeros(len(K))
 EC_FFT = np.zeros(len(K))
+BS = np.zeros(len(K))
 
 for i in range(len(K)):
     EC_MC[i] = np.exp(-r * T) * np.mean(np.maximum(S[:, -1] - K[i], 0))
     EC_FFT[i] = Heston_FFT(kappa, eta, theta, rho, np.sqrt(v0), K[i], T, S0, r, q, option_type, integration_rule)
+    BS[i] = BS_price(np.sqrt(eta), S0, K[i], r, q, T, option_type)
+    print("test")
 
 plt.figure()
 plt.plot(K, EC_MC, 'r*', linewidth=1.1)
 plt.plot(K, EC_FFT, 'g+', linewidth=1.1)
+plt.plot(K, BS, '+', linewidth=1.1)
 plt.plot(K, midquote, 'o', linewidth=1.1)
 plt.xlabel('K')
 plt.ylabel('price')
 plt.title('Comparison MC and FFT - Midquote')
-plt.legend(['MC', 'FFT', 'Market'])
-plt.savefig('../generated_plots/ComparisonMCFFT_T1205.png')
+plt.legend(['MC', 'FFT', 'BS', 'Market'])
+#plt.savefig('../generated_plots/ComparisonMCFFT_T1205.png')
 plt.show()
 
 # 6. Compute price of CBC for different B(=C) (continued)
