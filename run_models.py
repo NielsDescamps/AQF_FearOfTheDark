@@ -1,7 +1,6 @@
 
 import json
 from src.Heston_FFT import Heston_FFT
-from src.load_data import load_data
 import numpy as np
 import matplotlib.pyplot as plt
 from src.jump_characteristic_function import joint_characteristic_function
